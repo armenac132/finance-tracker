@@ -1,8 +1,9 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/FinanceTracker.Sandbox/FinanceTracker.Sandbox.csproj" />
+    <Project Path="src/Web/FinanceTracker.Web.Bff/FinanceTracker.Web.Bff.csproj" Id="fa0df6bd-d92e-4edb-8ac0-4c4615a37817" />
+    <Project Path="src/Web/FinanceTracker.Web.Client/FinanceTracker.Web.Client.csproj" Id="bf53a19c-4beb-484f-a2f8-1fabed755eb5" />
+    <Project Path="src/Web/FinanceTracker.Web.Contracts/FinanceTracker.Web.Contracts.csproj" Id="287f1b3e-49c6-4ef3-9abe-53af358a69c4" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/FinanceTracker.Sandbox.Tests/FinanceTracker.Sandbox.Tests.csproj" />
-  </Folder>
+  <Folder Name="/tests/" />
+  <Project Path="tests/FinanceTracker.Web.Contracts.Tests/FinanceTracker.Web.Contracts.Tests.csproj" Id="99978ef1-0b0c-484e-b782-040f148146a4" />
 </Solution>
