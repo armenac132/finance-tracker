@@ -211,8 +211,51 @@ GitHub feature that enforces rules on a branch — required PRs, required status
 **Why it matters here:** Forces every change through a PR with CI checks, even for a solo developer. Builds the discipline.
 
 ### CodeQL
-GitHub's semantic code analysis engine for finding security vulnerabilities and bugs. Free for public repos.
-**Why it matters here:** Catches things like SQL injection, hard-coded secrets, unsafe deserialization across the polyglot codebase.
+GitHub's **SAST** (Static Application Security Testing) engine. Parses your code into a queryable database that captures structure *and* data flow, then runs a library of queries against it to find vulnerabilities and bugs. Originally from Semmle (acquired by GitHub in 2019).
+
+**What makes it different from a linter:** Linters check syntax in one file. CodeQL traces values across function and project boundaries — e.g. "this string from `Request.Query["q"]` reaches `SqlCommand.CommandText` four calls deep, and nothing along the way sanitizes it." Same category as Coverity / Fortify / Snyk Code, but free for public repos and PR-integrated.
+
+**What it catches** (in C#/.NET): SQL/LDAP/XPath injection, XSS, insecure deserialization (`BinaryFormatter`, `JavaScriptSerializer`), weak hashing (MD5/SHA1), unvalidated redirects, missing antiforgery tokens, insecure cookie config, hard-coded credentials, path traversal, SSRF, improper certificate validation, plus general quality smells.
+
+**Setup tiers:**
+1. **Default setup** — one click in `Security → Code scanning`. GitHub picks languages, query suite, schedule.
+2. **Advanced setup** — generates `.github/workflows/codeql.yml` you control. Needed when you have a non-standard build or multiple languages with different configs.
+3. **CodeQL CLI** — run locally, write custom queries. Power-user mode.
+
+**How it runs:** On push to `main`, on PRs to `main`, and weekly on cron. For compiled languages (C#, Go, Java) it observes `dotnet build` / `go build` to know what to analyze — so a broken build = no CodeQL run.
+
+**Query suites** (toggleable in advanced setup):
+| Suite | Scope |
+|---|---|
+| `code-scanning` (default) | Curated, low false-positive rate |
+| `security-extended` | Adds more rules at higher FP rate |
+| `security-and-quality` | Above + code-quality smells |
+
+**Where findings appear:** `Security` tab → `Code scanning alerts`, *and* inline as PR comments on the offending lines. False positives can be dismissed with a reason that sticks.
+
+**Why it matters here:** Whole-program data-flow analysis across our polyglot services. For C#/Blazor specifically, the queries cover ASP.NET pitfalls Roslyn analyzers miss. Pairs with [[secret-scanning]] (your secrets) and Dependabot (your dependencies) to form the three-leg stool of "is this codebase reasonably safe".
+
+**Gotchas:**
+- CodeQL analyzes *your code*. Dependabot analyzes *your dependencies*. Different jobs — run both.
+- First analysis on a fresh repo can take 10–15 minutes. Subsequent runs are faster.
+- Free for public repos. For private repos, free for personal accounts in most cases; paid via GitHub Advanced Security for organizations.
+- Default-setup can't be enabled if there's no analyzable code yet — fine to revisit after the first project lands.
+
+### Secret Scanning
+GitHub feature that scans commits, issues, PR descriptions, and wiki content for **known-secret patterns** — AWS keys, GitHub tokens, Stripe keys, database connection strings with credentials, hundreds of providers' formats.
+
+**Two modes:**
+1. **Push protection** — blocks the push at the moment you try to commit a secret. Best mode; enable it.
+2. **Alerting** — if a secret slips through, you (and often the provider) get an immediate alert. GitHub also notifies many providers automatically so they can revoke the key.
+
+**Enable from:** `Security` tab → `Secret scanning` → `Enable` + `Enable push protection`. Free, one click each. Public repos always-on; private repos free for personal accounts.
+
+**Why it matters here:** A finance app will accumulate API keys (Plaid, brokerage APIs, cloud creds). Secret scanning is the safety net behind "don't commit secrets" — when (not if) you slip, it catches you before the secret reaches GitHub or alerts the provider so they can rotate.
+
+**Gotchas:**
+- It only catches *known* patterns. Custom internal secrets need custom patterns (configurable on paid plans) or won't be caught.
+- If a secret *does* get committed and you push to a public repo, treat it as compromised — rotate immediately. Removing the commit from history doesn't remove it from caches/forks/clones.
+- Pairs with the principle: **never commit real secrets, even temporarily.** Use `.env` files (gitignored), user-secrets (`dotnet user-secrets`), or a secrets manager.
 
 ### CODEOWNERS
 A file GitHub looks for that maps **file paths** to **people or teams** who own those files. When a PR touches a matched path, GitHub auto-requests a review from the listed owner(s).
