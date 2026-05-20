@@ -219,6 +219,15 @@ Secrets management — dynamic database credentials, encryption-as-a-service, PK
 GitHub feature that enforces rules on a branch — required PRs, required status checks, no force-push, linear history.
 **Why it matters here:** Forces every change through a PR with CI checks, even for a solo developer. Builds the discipline.
 
+### CI Cache (Actions Cache)
+A per-repo key-value blob store provided by GitHub Actions. A workflow restores a directory from the cache at job start (keyed by a hash of some input files) and saves it back at job end if the key is new. Used to skip work that has no reason to repeat — most commonly, package downloads.
+
+**How `setup-dotnet@v4` uses it:** with `cache: true`, it hashes the file(s) named by `cache-dependency-path` (we point at `**/packages.lock.json`), then restores `~/.nuget/packages` keyed by that hash. Same hash next run → cache hit → `dotnet restore` finds every package already on disk. Different hash → partial download, then re-save under the new key.
+
+**Cache key choice is the whole game.** Too coarse (hash every `.csproj`) → busts on cosmetic edits. Too narrow → branches share stale caches. A lockfile hash is the sweet spot: changes exactly when dependencies actually change.
+
+**Why it matters here:** purely a performance optimization — remove it and CI still works, just slower. Saves 30–90s per restore on a real-sized solution; that compounds across every PR, every push, every Dependabot bump. Pairs naturally with [NuGet Lockfile](#nuget-lockfile-packageslockjson).
+
 ### CodeQL
 GitHub's **SAST** (Static Application Security Testing) engine. Parses your code into a queryable database that captures structure *and* data flow, then runs a library of queries against it to find vulnerabilities and bugs. Originally from Semmle (acquired by GitHub in 2019).
 
@@ -331,6 +340,19 @@ Git history with no merge commits — only fast-forward, squash, or rebase merge
 - **Polyrepo:** each service in its own repo.
 
 **Why it matters here:** We chose **monorepo**. Microservices deployment story comes from path-filtered workflows, not separate repos. Avoids cross-repo PRs for shared contract changes.
+
+### NuGet Lockfile (`packages.lock.json`)
+A file NuGet writes next to a `.csproj` capturing the **fully resolved** dependency graph: every direct + transitive package, its exact resolved version, and a content hash. Enabled per-project with `<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>` (or once in `Directory.Build.props` at the repo root). Committed to git.
+
+**The problem it solves.** A `PackageReference` like `<PackageReference Include="Serilog" Version="3.1.1" />` looks pinned but isn't fully — Serilog's own dependencies use version *ranges*, and NuGet picks concrete transitive versions at restore time. Two restores a week apart can produce different graphs because a compatible transitive was published in between. Usually harmless, occasionally not, and either way: "the build that passed CI Tuesday" isn't byte-identical to "the same commit built today." Lockfile pins the graph.
+
+**How it behaves.** First `dotnet restore` after enabling: writes the lockfile. Subsequent restores: read the lockfile and install exactly those versions. If `.csproj` changes in a way that requires a different graph, the lockfile updates as part of the restore. With `dotnet restore --locked-mode`, restore **fails** if the lockfile would need to change — useful in CI to catch "someone edited a `.csproj` but didn't update the lock."
+
+**Workflow.** Bump a package version → edit `.csproj` → `dotnet restore` locally → commit *both* the `.csproj` change and the updated `packages.lock.json`.
+
+**Analogues:** `package-lock.json` (npm), `yarn.lock`, `Cargo.lock`, `go.sum`, `poetry.lock`. Same idea.
+
+**Why it matters here:** Pairs with [CI Cache](#ci-cache-actions-cache) — the lockfile hash is a precise cache key, so cache hits are also reproducibility guarantees, not just speed wins. Also means Dependabot PRs become legible: the diff shows exactly which transitives moved.
 
 ### OIDC Deploy (Cloud)
 GitHub Actions can act as an OIDC identity provider to cloud accounts (AWS, Azure, GCP) — no long-lived secrets stored in GitHub.
