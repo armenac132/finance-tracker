@@ -240,8 +240,27 @@ A file GitHub looks for that maps **file paths** to **people or teams** who own 
 - The owner must have **write access** to the repo or the auto-review request won't fire.
 
 ### Dependabot
-GitHub's automated dependency update bot. Opens PRs to bump versions; can group related updates.
-**Why it matters here:** Keeps NuGet packages and Actions versions current without manual work.
+GitHub's built-in dependency bot. Watches your dependencies (NuGet, npm, Docker base images, GitHub Actions, etc.) and opens PRs when newer versions exist or a CVE is disclosed. Runs on GitHub's infrastructure — nothing to install.
+
+**Three jobs it does:**
+1. **Version updates** — scheduled bumps (daily/weekly/monthly), configured via `.github/dependabot.yml`.
+2. **Security updates** — immediate PRs when a CVE is published. On by default for every repo, *no config file needed*.
+3. **Dependency graph + alerts** — shows your dep tree and security alerts in the **Security** tab.
+
+**Key config concepts** (from our `dependabot.yml`):
+- `package-ecosystem` — what to watch (`nuget`, `github-actions`, `docker`, `npm`, etc.).
+- `directory` — where to look (`/` for repo root). Monorepos add one block per directory.
+- `schedule.interval` — `daily` / `weekly` / `monthly`. Weekly is the usual sweet spot.
+- `open-pull-requests-limit` — caps simultaneous open PRs; prevents flooding if you fall behind.
+- `groups` — bundle related packages into one PR so e.g. all `Microsoft.*` packages bump together instead of as 12 separate PRs. **Single biggest sanity setting.**
+
+**Why it matters here:** A polyglot microservices project will have many dependencies across services. Without Dependabot you either freeze on old versions or lose Saturdays to manual upgrades. With CI (Phase D), Dependabot PRs are auto-verified — green check = safe to merge.
+
+**Gotchas:**
+- Dependabot opens PRs; it does **not** run tests. Your CI is what gives the PR its "safe to merge" signal.
+- Security updates ignore your `schedule` and fire immediately — this is correct behavior.
+- Private NuGet feeds need credentials via `Settings → Secrets and variables → Dependabot`.
+- Alternative: **Renovate** (more flexible, monorepo-aware autodiscovery). Dependabot is GitHub-native and good enough as a default.
 
 ### GHCR (GitHub Container Registry)
 GitHub's Docker image registry, integrated with repo permissions.
