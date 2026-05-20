@@ -1,1 +1,8 @@
-<Solution />
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FinanceTracker.Sandbox/FinanceTracker.Sandbox.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FinanceTracker.Sandbox.Tests/FinanceTracker.Sandbox.Tests.csproj" />
+  </Folder>
+</Solution>
