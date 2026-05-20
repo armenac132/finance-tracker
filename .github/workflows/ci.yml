@@ -12,10 +12,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  format:
+    name: Format check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      - name: Verify formatting
+        run: dotnet format --verify-no-changes --severity warn
+
   build-test:
     name: Build & Test (.NET)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    # Test reporter needs write access to post the check-run summary.
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
 
     steps:
       - name: Checkout
@@ -25,6 +47,8 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
 
       - name: Restore
         run: dotnet restore
@@ -34,6 +58,15 @@ jobs:
 
       - name: Test
         run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+
+      - name: Publish test report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: xUnit tests
+          path: '**/TestResults/**/*.trx'
+          reporter: dotnet-trx
+          fail-on-error: false
 
       - name: Upload test results
         if: always()
