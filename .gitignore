@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# --- Local-only learning artifacts (do not commit) ---
+LEARNING_PLAN.md
+NOTES.md
+notes/
+scratch/
