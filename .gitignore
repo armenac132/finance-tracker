@@ -364,6 +364,7 @@ FodyWeavers.xsd
 
 # --- Local-only learning artifacts (do not commit) ---
 LEARNING_PLAN.md
+CLAUDE.md
 NOTES.md
 notes/
 scratch/

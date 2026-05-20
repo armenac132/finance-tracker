@@ -22,6 +22,15 @@ A living reference of terms, patterns, and tools encountered while building this
 
 ## Architecture Patterns
 
+### ADR (Architecture Decision Record)
+A short, dated markdown file capturing **why** a load-bearing decision was made — not just what it is. One file per decision, numbered sequentially (`0001-...md`), stored in [`docs/decisions/`](decisions/).
+
+**Standard sections:** Status, Context, Decision, Consequences (positive/negative/neutral), Alternatives Considered.
+
+**Why it matters here:** A conversation transcript is ephemeral; an ADR isn't. When a future session (Claude or human) asks "why did we pick Blazor WASM over Server?" the ADR answers without needing the chat that produced it. See [`docs/decisions/README.md`](decisions/README.md) for the template and when to write one.
+
+**When to write one:** the decision will shape code for a long time, reversing it is expensive, or the decision picks between credible alternatives where the *why* matters. Skip for trivia.
+
 ### BFF (Backend for Frontend)
 A backend service that exists specifically to serve one frontend. It aggregates calls to downstream services, shapes responses for the UI, and holds sensitive things (like OAuth tokens) the browser shouldn't see.
 **Why it matters here:** Our Blazor WASM client talks only to the BFF; the BFF talks to the domain services. This keeps the UI ignorant of the microservices fan-out and lets us evolve services without breaking the client.
