@@ -215,8 +215,29 @@ GitHub's semantic code analysis engine for finding security vulnerabilities and 
 **Why it matters here:** Catches things like SQL injection, hard-coded secrets, unsafe deserialization across the polyglot codebase.
 
 ### CODEOWNERS
-File mapping paths to people/teams who are auto-requested as reviewers when those paths change.
-**Why it matters here:** Even solo, it teaches the pattern and ensures you self-review changes in critical areas.
+A file GitHub looks for that maps **file paths** to **people or teams** who own those files. When a PR touches a matched path, GitHub auto-requests a review from the listed owner(s).
+
+**Locations GitHub checks** (use any one): `.github/CODEOWNERS`, `/CODEOWNERS`, `/docs/CODEOWNERS`.
+
+**Syntax:** `<path pattern>  <owner1> <owner2> ...`
+- Patterns work like `.gitignore` (`*`, `*.cs`, `/src/Web/`, `/src/Services/Accounts/**`).
+- Owners are GitHub usernames (`@username`) or teams (`@org/team-name`).
+- Later rules override earlier ones — most specific path should come last.
+
+**Example (future-state):**
+```
+*                              @armenac132
+/src/Web/                      @armenac132
+/.github/                      @armenac132
+/src/Shared/Contracts/         @armenac132
+```
+
+**Why it matters here:** Even solo, it (1) teaches the mechanic before collaborators arrive, (2) forces a deliberate diff re-read on the PR page (a different view than VS), and (3) pairs with branch protection's "Require review from Code Owners" rule to route every PR through the right person automatically.
+
+**Gotchas:**
+- Usernames are case-sensitive and the `@` is required. `armenac132` (no @) or wrong casing silently fails to match.
+- Only the **last matching line** for a given file applies — order matters when patterns overlap.
+- The owner must have **write access** to the repo or the auto-review request won't fire.
 
 ### Dependabot
 GitHub's automated dependency update bot. Opens PRs to bump versions; can group related updates.
