@@ -17,21 +17,21 @@
       },
       "Microsoft.AspNetCore.Components.WebAssembly.DevServer": {
         "type": "Direct",
-        "requested": "[8.0.27, )",
-        "resolved": "8.0.27",
-        "contentHash": "plCLvBzBXiwjYhvPfV6B52jhKhw/M+ugXmfbZ+Cmyjupr2lksislAnfrZeHBU5qNwaFSlBcVn3gfxuomH8GIFg=="
+        "requested": "[10.0.8, )",
+        "resolved": "10.0.8",
+        "contentHash": "CmMy+FfgY2OpGCPz6VSWiHICZ9veijLM/Ih8CuvzQala57Lvn2OxVes4Xw07VikjAGT3Wcms/mXpquwIrD0l3Q=="
       },
       "Microsoft.NET.ILLink.Tasks": {
         "type": "Direct",
-        "requested": "[8.0.27, )",
-        "resolved": "8.0.27",
-        "contentHash": "rQi9TxifHRnXP7lVRZH05DxD2/XGbJp12q0ozcbrlBlBnyyzssFTH/2vLhtKWUp2CT1qVscTrcYTFiwTyKPKRg=="
+        "requested": "[8.0.24, )",
+        "resolved": "8.0.24",
+        "contentHash": "1gnadp//+DoGJvV4AFdzPqYPxkypaWYjYMCr7KAacV0iadsHz1nU+rrkoxBCna4FCmeKH49CisEwa7g94/MbEg=="
       },
       "Microsoft.NET.Sdk.WebAssembly.Pack": {
         "type": "Direct",
-        "requested": "[10.0.8, )",
-        "resolved": "10.0.8",
-        "contentHash": "xQ05xw4t8wjFxwD7a/Nye/IPEihIyUkZIbRzTytVFqko6Ows3UvjqHIEjk3gCOIZloNFOLykYPsTyKRCvEs6ng=="
+        "requested": "[10.0.3, )",
+        "resolved": "10.0.3",
+        "contentHash": "Wv9ugg75HxuYeBxJSoK2UPN6lpqsASkyZwd90bdRyVKOtaXZFaKg7R+dYqbZSHJXAIxC1HOcYR0imuIcKpI1yw=="
       },
       "Microsoft.AspNetCore.Authorization": {
         "type": "Transitive",
