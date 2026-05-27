@@ -89,11 +89,48 @@ Changing the shape of an event or API in a way that older consumers still unders
 - **Blazor United / Auto** (.NET 8+) — Server-rendered first, hydrates to WASM.
 - **MAUI Blazor Hybrid** — Native app shell hosting Blazor.
 
-**Why it matters here:** We picked **WASM** because it forces a clean HTTP boundary between UI and backend, which matches the microservices grain.
+**Why it matters here:** We picked **WASM** because it forces a clean HTTP boundary between UI and backend, which matches the microservices grain. The deployment topology between WASM and the BFF (hosted-WASM vs separate dev servers + CORS) is settled in [ADR 0005](decisions/0005-separate-dev-servers-over-hosted-wasm.md) — we run them as **separate processes**, not hosted-WASM.
+
+### Blazor `@inject` (vs. constructor injection)
+Razor components in Blazor cannot use constructor injection. Blazor instantiates components via `Activator.CreateInstance(type)` (no args), then walks the instance and assigns dependencies through `@inject` directives or `[Inject]` properties.
+
+```razor
+@inject IPingService Ping     // top of the .razor file
+```
+
+Adding a constructor with parameters breaks the implicit parameterless constructor and crashes the renderer with `System.MissingMethodException: No parameterless constructor defined for type '<Component>'`.
+
+**Why it matters here:** Components are pooled and re-instantiated by Blazor's renderer constantly during navigation. Constructor injection would either force `IServiceProvider` threading through every instantiation or require source-generated wiring per component. Mental model: **constructor injection for services, `@inject` for components.** Regular C# classes (services, repositories) use constructor injection as normal.
+
+### CORS (Cross-Origin Resource Sharing)
+A browser-enforced security mechanism that blocks JavaScript from reading responses to requests made to a different *origin* (scheme + host + port) than the page the script is running on. The server opts in by returning specific headers (`Access-Control-Allow-Origin`, `-Methods`, `-Headers`). Configured in ASP.NET Core via `AddCors` + a named policy + `UseCors`.
+
+```csharp
+builder.Services.AddCors(o => o.AddPolicy("Client", p =>
+    p.WithOrigins("https://localhost:7230").AllowAnyHeader().AllowAnyMethod()));
+// ...
+app.UseCors("Client");
+```
+
+**Why it matters here:** Per [ADR 0005](decisions/0005-separate-dev-servers-over-hosted-wasm.md) the Blazor WASM Client and the BFF run as **separate processes on different ports**, which makes every Client → BFF call a cross-origin request. The BFF whitelists the Client's origin via a named CORS policy. In production the policy is updated (via config) to the Client's deployed origin. **Symptoms when misconfigured:** a red error in the browser console mentioning "blocked by CORS policy"; the network tab shows a successful OPTIONS preflight followed by a blocked GET/POST.
 
 ### EF Core DbContext
 Entity Framework Core's unit-of-work + identity-map object. Maps C# classes to a database.
 **Why it matters here:** Each service has its own DbContext and schema. Do **not** share DbContexts across services — that's the #1 microservices anti-pattern in .NET land.
+
+### `IHttpClientFactory` / Typed Clients
+The preferred way to consume `HttpClient` in .NET. Direct `new HttpClient()` and naive DI registration of `HttpClient` are known to cause socket-exhaustion on the server and offer no clean place to add cross-cutting behavior (auth, retries, logging, tracing). `IHttpClientFactory` manages `HttpClient` instances and their underlying `HttpMessageHandler` lifecycle, and the **typed-client** overload registers a service class that gets a properly-managed `HttpClient` injected.
+
+```csharp
+builder.Services.AddHttpClient<IPingService, PingService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7106");
+});
+```
+
+This single call (a) registers `IHttpClientFactory` if not already registered, (b) registers `PingService` as the implementation of `IPingService`, and (c) wires DI so resolving `IPingService` produces a `PingService` constructed with a `HttpClient` configured with the supplied base address. Per-client message handlers can be chained on with `.AddHttpMessageHandler<T>()` for retries, auth headers, or telemetry.
+
+**Why it matters here:** Standard pattern across every Client → BFF and BFF → service call site. Even in Blazor WASM where socket-exhaustion isn't a real concern (the browser handles socket reuse), the pattern stays consistent and gives a clean hook to add things like an auth handler later. Do not register raw `HttpClient` in DI; use the typed-client overload.
 
 ### MudBlazor
 Free, opinionated Material-design Blazor component library (data grids, charts, dialogs, forms).
