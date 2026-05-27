@@ -1,0 +1,29 @@
+name: Task
+description: A small, atomic unit of work — typically a single PR.
+title: "<short description>"
+labels: ["type:task"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: What specifically needs doing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: done_when
+    attributes:
+      label: Done when
+      description: How to know it's finished. Usually 1–3 bullets.
+      value: |
+        -
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / context
+      description: Anything else worth knowing — gotchas, related issues, links.

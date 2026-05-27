@@ -1,0 +1,41 @@
+name: Feature
+description: A user-visible capability or unit of meaningful work.
+title: "feat: <short description>"
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph description of the capability.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why / learning value
+      description: What is the architectural or learning reason for doing this now? (Skip for purely-tactical features.)
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checklist of observable outcomes. Each item should be independently verifiable.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: What this feature explicitly does *not* cover, to keep the PR small.
+
+  - type: textarea
+    id: refs
+    attributes:
+      label: Related ADRs / glossary / parent issue
+      description: Links to relevant ADRs (`docs/decisions/00XX-*.md`), glossary entries, or a parent feature.
